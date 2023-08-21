@@ -5,6 +5,7 @@
 #     Tim Bielawa <tbielawa@redhat.com>
 #     Magnus Hedemark <mhedemar@redhat.com>
 # Copyright 2017, Dag Wieers <dag@wieers.com>
+# Copyright 2023, Dmitry Titov <pointtitov@yandex.com>
 #
 # This file is part of Ansible
 #
@@ -631,9 +632,15 @@ def child_to_element(module, child, in_type):
         module.fail_json(msg="Invalid child input type: %s. Type must be either xml or yaml." % in_type)
 
 
-def children_to_nodes(module=None, children=[], type='yaml'):
+def children_to_nodes(module=None, children=None, type='yaml'):
     """turn a str/hash/list of str&hash into a list of elements"""
-    return [child_to_element(module, child, type) for child in children]
+    if isinstance(children, MutableMapping):  # if children is a dict
+        nodes = []
+        for key, value in children.items():
+            nodes.extend(child_to_element(module, {key: value}, type))
+        return nodes
+    else:
+        return [child_to_element(module, child, type) for child in children]
 
 
 def finish(module, tree, xpath, namespaces, changed=False, msg="", hitcount=0, matches=tuple()):
